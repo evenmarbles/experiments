@@ -1,0 +1,63 @@
+{
+    "joystick": {
+        "button": {
+            "down": {
+                "12": "QUIT",
+                "8": {
+                    "operation": "effectors",
+                    "effectors": [
+                        "LArm",
+                        "RArm",
+                        ["LArm", "RArm"],
+                        ["LArm", "RArm", "Torso"],
+                        "LLeg",
+                        "RLeg",
+                        "Torso"
+                    ]
+                }
+            }
+        },
+        "hat": {
+            "x": {
+                "label": "dy",
+                "scale": 0.0004,
+                "effectors": ["Torso"]
+            },
+            "y": {
+                "label": "dz",
+                "scale": 0.0004,
+                "effectors": ["Torso"]
+            }
+        },
+        "axis": {
+            "discretize": False,
+            "1": {
+                "label": "dz",
+                "scale": -0.004,
+                "effectors": [
+                    "LArm",
+                    "RArm",
+                    "LLeg",
+                    "RLeg"]
+            },
+            "3": {
+                "label": "dy",
+                "scale": -0.004,
+                "effectors": [
+                    "LArm",
+                    "RArm",
+                    "LLeg",
+                    "RLeg"]
+            },
+            "2": {
+                "label": "dx",
+                "scale": -0.004,
+                "effectors": [
+                    "LArm",
+                    "RArm",
+                    "LLeg",
+                    "RLeg"]
+            }
+        }
+    }
+}

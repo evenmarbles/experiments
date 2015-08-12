@@ -1,0 +1,48 @@
+#VRML_SIM V8.1.0 utf8
+WorldInfo {
+}
+Viewpoint {
+  orientation 0.0530736 0.997235 0.0520198 4.61263
+  position 0.62995 1.16737 -0.17626
+}
+Background {
+}
+DirectionalLight {
+  ambientIntensity 1
+  direction -0.5 -2 -0.5
+  intensity 0.6
+}
+DirectionalLight {
+  ambientIntensity 1
+  direction 0.5 0.5 0.5
+  intensity 0.6
+}
+Supervisor {
+  name "serverc"
+  controller "serverc"
+  controllerArgs "12345"
+}
+RobotstadiumSoccerField {
+  frame1Color 0.992157 0.854902 0.219608
+  frame2Color 0.152941 0.266667 1
+}
+DEF BALL Ball {
+  translation 3.235 0.0499137 -0.055
+  radius 0.05
+}
+DEF GOAL_KEEPER Nao {
+  translation 4.5 0.334 0
+  rotation -3.39051e-09 0.707108 0.707105 3.14159
+  version "4.0"
+  controller "naoqisim"
+  controllerArgs "9559"
+  bottomCameraWindowPosition 0 0.25
+}
+DEF PLAYER Nao {
+  translation 3.08 0.334 0
+  version "4.0"
+  color 0.152941 0.266667 1
+  controller "naoqisim"
+  controllerArgs "9560"
+  topCameraWindowPosition 0 0.75
+}

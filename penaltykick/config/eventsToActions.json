@@ -1,0 +1,10 @@
+{
+    "keyboard": {
+        "down": {
+            "pygame.K_ESCAPE": "QUIT",
+            "pygame.K_SPACE": [-1.0],
+            "pygame.K_LEFT" : [-0.004],
+            "pygame.K_RIGHT":  [0.004]
+        }
+    }
+}

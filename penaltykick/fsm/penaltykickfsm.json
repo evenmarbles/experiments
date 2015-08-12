@@ -1,0 +1,63 @@
+{
+	"Module": "D:/Astrid/Documents/GitHub/experiments/penaltykick/fsm/penaltykickfsm.py",
+	"States": [
+	    {"ShiftWeight": {
+			"args": "motion",
+			"kwargs": {"support_leg": "right"}
+		}},
+	    {"ShiftOut": {
+			"args": "motion",
+			"kwargs": {"support_leg": "right"}
+		}},
+	    {"ShiftIn": {
+			"args": "motion",
+			"kwargs": {"support_leg": "right"}
+		}},
+	    {"Kick": {
+			"args": "motion",
+			"kwargs": {"support_leg": "right"}
+		}},
+		{"Idle": {
+			"args": "motion"
+		}},
+		{"Fallen": {
+			"args": "motion"
+		}}
+	],
+	"Initial": "ShiftWeight",
+	"Transitions": [
+		{"source": "*", "event": "no-op", "dest": "*"},
+	    {"source": "ShiftWeight", "event": "out", "dest": "ShiftOut"},
+	    {"source": "ShiftWeight", "event":"in", "dest": "ShiftIn"},
+	    {"source": "ShiftWeight", "event": "kick", "dest": "Kick"},
+	    {"source": "ShiftWeight", "event": "has_fallen", "dest": "Idle",
+	        "before": {"model": "NaoBot", "func": "motion_complete"}},
+	    {"source": "ShiftOut", "event": "out", "dest": "ShiftOut"},
+	    {"source": "ShiftOut", "event": "in", "dest": "ShiftIn"},
+	    {"source": "ShiftOut", "event": "kick", "dest": "Kick"},
+	    {"source": "ShiftOut", "event": "has_fallen", "dest": "Fallen",
+	        "before": {"model": "NaoBot", "func": "motion_complete"}},
+		{"source": "ShiftIn", "event": "out", "dest": "ShiftOut"},
+		{"source": "ShiftIn", "event": "in", "dest": "ShiftIn"},
+		{"source": "ShiftIn", "event": "kick", "dest": "Kick"},
+		{"source": "ShiftIn", "event" :"has_fallen", "dest": "Fallen",
+	        "before": {"model": "NaoBot", "func": "motion_complete"}},
+		{"source": "Kick", "event": "done", "dest": "Idle",
+	        "conditions": ["lambda x: not x._motion.is_running()",
+	                       "lambda x: x.motion_completed"],
+	        "before": {"model": "NaoBot", "func": "motion_complete"}},
+		{"source": "Kick", "event": "has_fallen", "dest": "Fallen",
+	        "before": {"model": "NaoBot", "func": "motion_complete"}},
+		{"source": "Fallen", "event": "done", "dest": "Idle",
+	        "before": {"model": "NaoBot", "func": "motion_complete"}}
+	],
+	"OnUpdate": [
+		{"source": "ShiftWeight", "conditions": ["lambda x: not x._motion.is_running()",
+	                                             "lambda x: x.motion_completed"],
+			"onupdate": {"model": "NaoBot", "func": "process_motion"}},
+		{"source": "ShiftOut", "conditions": ["lambda x: x.motion_completed"],
+			"onupdate": {"model": "NaoBot", "func": "process_motion"}},
+		{"source": "ShiftIn", "conditions": ["lambda x: x.motion_completed"],
+			"onupdate": {"model": "NaoBot", "func": "process_motion"}}
+	]
+}
