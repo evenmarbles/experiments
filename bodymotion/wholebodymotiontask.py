@@ -6,12 +6,12 @@ from mlpy.experiments.task import Task
 from naobot.world_model.model import NaoWorldModel
 
 
-class BodyMotionTask(Task):
+class WholeBodyMotionTask(Task):
     """The body motion task.
 
     """
-    def __init__(self):
-        super(BodyMotionTask, self).__init__()
+    def __init__(self, env=None):
+        super(WholeBodyMotionTask, self).__init__(env)
 
     def sensation(self, **kwargs):
         """Gather the state feature information.
@@ -48,7 +48,6 @@ class BodyMotionTask(Task):
                 "wy": 4,
                 "wz": 5,
             }[key]
-
         State.key_to_index = staticmethod(map_state_key)
 
         State.set_description({
@@ -60,8 +59,6 @@ class BodyMotionTask(Task):
         })
 
     def _configure_action(self):
-        # noinspection PyDecorator
-        @staticmethod
         def map_action_key(key):
             return {
                 "dx": 0,
@@ -71,7 +68,7 @@ class BodyMotionTask(Task):
                 "dwy": 4,
                 "dwz": 5
             }[key]
-        Action.key_to_index = map_action_key
+        Action.key_to_index = staticmethod(map_action_key)
 
         Action.set_description({
             "move": {

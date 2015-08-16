@@ -193,7 +193,6 @@ def main(args):
     try:
         data = load_from_file(args.policy)
         actions = data['act'][args.policy_num]
-        # actions = data["actions"][0]
     except IOError:
         sys.exit(sys.exc_info()[1])
     except KeyError, e:
@@ -204,10 +203,8 @@ def main(args):
             "type": "float",
             "value": "data.state",
             "is_index": True,
-            # "retrieval_method": "knn",
-            # "retrieval_method_params": 15
-            "retrieval_method": "radius-n",
-            "retrieval_method_params": 0.01
+            "retrieval_method": args.retrieval_method,
+            "retrieval_method_params": args.retrieval_method_params
         },
         "act": {
             "type": "float",
@@ -221,10 +218,7 @@ def main(args):
             "is_index": False,
         }
     }
-    model = CASML(case_template, rho=args.rho, tau=args.tau, sigma=args.sigma,
-                  ncomponents=args.ncomponents, **{"plot_retrieval": False, "plot_retrieval_names": "state",
-                                                   "plot_revision": False, "plot_revision_params": "original_origin",
-                                                   "plot_retention": False})
+    model = CASML(case_template, rho=args.rho, tau=args.tau, sigma=args.sigma, ncomponents=args.ncomponents)
 
     n = obs.shape[0]
     action_error = -np.inf * np.ones(n)
@@ -267,10 +261,14 @@ if __name__ == "__main__":
     ap.add_argument("--rho", type=float, default=0.97, required=False, help="The maximum error rho.")
     ap.add_argument("--tau", type=float, default=0.005, required=False, help="The maximum error tau.")
     ap.add_argument("--sigma", type=float, default=0.001, required=False, help="The maximum error sigma.")
-    ap.add_argument("--ncomponents", type=int, default=10, required=False, help="The number of hidden states.")
-    ap.add_argument("--policy_num", type=str, default=0, required=False,
-                    help="The identification of the policy to run")
+    ap.add_argument("--ncomponents", type=int, default=2, required=False, help="The number of hidden states.")
+    ap.add_argument("--retrieval_method", type=str, default='radius-n', required=False,
+                    help="The state retrieval method.")
+    ap.add_argument("--retrieval_method_params", type=float, default=0.01, required=False,
+                    help="The retrieval method parameters.")
     ap.add_argument("--infile", type=str, required=True, help="The trajectory data file name.")
     ap.add_argument("--policy", type=str, required=True, help="The policy file name.")
+    ap.add_argument("--policy_num", type=str, default=0, required=False,
+                    help="The identification of the policy to run")
 
     main(ap.parse_args())

@@ -1,6 +1,7 @@
 from penaltykick.irl import IRLPenaltyKickTask
 from penaltykick.rl import RLPenaltyKickTask
-from bodymotion import BodyMotionTask
+from bodymotion import WholeBodyMotionTask
+from bodymotion import LarmBodyMotionTask
 
 
 class TaskFactory(object):
@@ -11,7 +12,8 @@ class TaskFactory(object):
             return {
                 "penaltykick-irl": IRLPenaltyKickTask,
                 "penaltykick-rl": RLPenaltyKickTask,
-                "bodymotion-casml": BodyMotionTask,
+                "larmbodymotion-casml": LarmBodyMotionTask,
+                "wholebodymotion-casml": WholeBodyMotionTask,
             }[_type](*args, **kwargs)
 
         except KeyError:

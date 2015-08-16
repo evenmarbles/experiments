@@ -1,3 +1,4 @@
 __all__ = ['fsm']
 
-from .bodymotiontask import *
+from .wholebodymotiontask import *
+from .larmbodymotiontask import *

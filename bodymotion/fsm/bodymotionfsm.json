@@ -1,27 +1,23 @@
 {
 	"Module": "D:/Astrid/Documents/GitHub/experiments/bodymotion/fsm/bodymotionfsm.py",
 	"States": [
-        "WakeUp",
-	    "MoveEffectors"
+		{"WakeUp": {
+			"args": "motion"
+		}},
+		{"MoveEffectors": {
+			"args": "motion"
+		}}
 	],
 	"Initial": "WakeUp",
 	"Transitions": [
-		{"source": "*", "event": "no-op", "dest": "*",
-	        "conditions": ["lambda x: not x._motion.is_running()",
-	                       "lambda x: x.motion_completed"],
-			"before": {"model": "NaoBot", "func": "action_completed"},
-			"after": {"model": "NaoBot", "func": "choose_action"}},
-	    {"source": "WakeUp", "event": "move", "dest": "MoveEffectors",
-	        "conditions": ["lambda x: not x._motion.is_running()",
-	                       "lambda x: x.motion_completed"],
-	        "before": {"model": "NaoBot", "func": "action_completed"},
-	        "after": {"model": "NaoBot", "func": "choose_action"}
-		},
-	    {"source": "MoveEffectors", "event":"move", "dest": "MoveEffectors",
-	        "conditions": ["lambda x: not x._motion.is_running()",
-	                       "lambda x: x.motion_completed"],
-            "before": {"model": "NaoBot", "func": "action_completed"},
-	        "after": {"model": "NaoBot", "func": "choose_action"}
-		}
+		{"source": "*", "event": "no-op", "dest": "*"},
+	    {"source": "WakeUp", "event": "move", "dest": "MoveEffectors"},
+	    {"source": "MoveEffectors", "event":"move", "dest": "MoveEffectors"}
+	],
+	"OnUpdate": [
+		{"source": "WakeUp", "conditions": ["lambda x: not x._motion.is_running()"],
+			"onupdate": {"model": "NaoBot", "func": "process_motion"}},
+		{"source": "MoveEffectors", "conditions": ["lambda x: x.motion_completed"],
+			"onupdate": {"model": "NaoBot", "func": "process_motion"}}
 	]
 }

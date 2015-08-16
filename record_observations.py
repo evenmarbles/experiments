@@ -43,6 +43,7 @@ def convert_to_policy(filename):
             return {'act': arr, 'act_desc': Action.description}
 
         return txt2pickle(filename, func=convert)
+    return filename
 
 
 def main(args):
