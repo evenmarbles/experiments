@@ -54,10 +54,10 @@
 	"OnUpdate": [
 		{"source": "ShiftWeight", "conditions": ["lambda x: not x._motion.is_running()",
 	                                             "lambda x: x.motion_completed"],
-			"onupdate": {"model": "NaoBot", "func": "process_motion"}},
+			"onupdate": {"model": "NaoBot", "func": "motion_complete"}},
 		{"source": "ShiftOut", "conditions": ["lambda x: x.motion_completed"],
-			"onupdate": {"model": "NaoBot", "func": "process_motion"}},
+			"onupdate": {"model": "NaoBot", "func": "motion_complete"}},
 		{"source": "ShiftIn", "conditions": ["lambda x: x.motion_completed"],
-			"onupdate": {"model": "NaoBot", "func": "process_motion"}}
+			"onupdate": {"model": "NaoBot", "func": "motion_complete"}}
 	]
 }

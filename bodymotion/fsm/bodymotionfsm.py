@@ -1,6 +1,6 @@
 import numpy as np
 
-from mlpy.mdp.stateaction import Action
+from mlpy.mdp.stateaction import MDPAction
 
 from naobot.behavior import NaoState
 from naobot.kinematics import NaoMotionController
@@ -66,7 +66,7 @@ class MoveEffectors(BodyMotionState):
         for effector, mapping in config["descr"].iteritems():
             delta = np.zeros(len(mapping.keys()))
             for key, axis in mapping.iteritems():
-                delta[Action.key_to_index(key)] = action[axis]
+                delta[MDPAction.key_to_index(key)] = action[axis]
 
             if np.any(delta):
                 effectors.append(effector)

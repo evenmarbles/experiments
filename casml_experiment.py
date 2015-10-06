@@ -6,8 +6,8 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 from mlpy.auxiliary.io import load_from_file
-from mlpy.mdp.stateaction import State
-from mlpy.mdp.continuous import CASML
+from mlpy.mdp.stateaction import MDPState
+from mlpy.mdp.continuous import CbTData, CbVData, CASML
 
 
 def plot_sampled(obs, sampled):
@@ -198,7 +198,7 @@ def main(args):
     except KeyError, e:
         sys.exit("Key not found: {0}".format(e))
 
-    case_template = {
+    case_t_template = {
         "state": {
             "type": "float",
             "value": "data.state",
@@ -218,7 +218,22 @@ def main(args):
             "is_index": False,
         }
     }
-    model = CASML(case_template, rho=args.rho, tau=args.tau, sigma=args.sigma, ncomponents=args.ncomponents)
+    case_v_template = {
+        "state": {
+            "type": "float",
+            "value": "data.state",
+            "is_index": True,
+            "retrieval_method": args.retrieval_method,
+            "retrieval_method_params": args.retrieval_method_params
+        },
+        "value": {
+            "type": "float",
+            "value": 0.0,
+            "is_index": False,
+        }
+    }
+    model = CASML(CbTData(case_t_template, rho=args.rho, tau=args.tau, sigma=args.sigma),
+                  ncomponents=args.ncomponents)
 
     n = obs.shape[0]
     action_error = -np.inf * np.ones(n)
@@ -238,7 +253,7 @@ def main(args):
 
                 for iter_, a in enumerate(actions.T):
                     # sample next state resulting from executing action `a` in state `state`
-                    next_state = model.sample(State(sampled[:, -1]), a)[:, np.newaxis]
+                    next_state = model.sample(MDPState(sampled[:, -1]), a)[:, np.newaxis]
                     sampled = np.hstack([sampled, next_state])
             except:
                 print "{0}:{1} Failed to infer next state distribution at step {2}.".format(i + 1, cntr + 1, iter_ + 1)
