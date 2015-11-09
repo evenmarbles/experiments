@@ -45,8 +45,8 @@ class BodyMotionEnvironment(Environment):
     def init(self):
         ts = TaskSpec(discount_factor=0.99, reward_range=(-20, 20))
         ts.set_continuing()
-        ts.set_charcount_obs(0)
-        ts.add_double_act((0, 2))
+        ts.add_double_obs(('NEGINF', 'POSINF'), repeat=3 if self._feature_rep == 'larm' else 15)
+        ts.add_double_act(('NEGINF', 'POSINF'), repeat=3 if self._feature_rep == 'larm' else 15)
 
         ts.set_extra(self._ts_extra + "COPYRIGHT Penaltykick (Python) implemented by Astrid Jackson")
         return ts.to_taskspec()
@@ -62,7 +62,10 @@ class BodyMotionEnvironment(Environment):
         return_ro = Reward_observation_terminal()
         return_ro.r = -1.0
         return_ro.o = Observation()
-        return_ro.terminal = False
+        if len(action.doubleArray) == 0:
+            return_ro.terminal = True
+        else:
+            return_ro.terminal = False
 
         return return_ro
 

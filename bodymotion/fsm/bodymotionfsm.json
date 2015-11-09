@@ -16,8 +16,8 @@
 	],
 	"OnUpdate": [
 		{"source": "WakeUp", "conditions": ["lambda x: not x._motion.is_running()"],
-			"onupdate": {"model": "NaoBot", "func": "process_motion"}},
+			"onupdate": {"model": "NaoBot", "func": "motion_complete"}},
 		{"source": "MoveEffectors", "conditions": ["lambda x: x.motion_completed"],
-			"onupdate": {"model": "NaoBot", "func": "process_motion"}}
+			"onupdate": {"model": "NaoBot", "func": "motion_complete"}}
 	]
 }

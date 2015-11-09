@@ -43,8 +43,6 @@ class BodyMotionAgent(ModelBasedAgent):
                 if id_ == 'FEATUREREP':
                     self._feature_rep = val
 
-            MDPState.dtype = MDPState.DTYPE_INT
-
             if self._feature_rep == 'larm':
                 def map_state_key(key):
                     return {
@@ -81,8 +79,8 @@ class BodyMotionAgent(ModelBasedAgent):
                         "dwz": 5
                     }[key]
 
-            MDPState.key_to_index = map_state_key
-            MDPAction.key_to_index = map_action_key
+            MDPState.key_to_index = staticmethod(map_state_key)
+            MDPAction.key_to_index = staticmethod(map_action_key)
 
     def start(self, observation):
         observation = self._update_observation()

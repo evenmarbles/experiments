@@ -7,7 +7,7 @@ from matplotlib import pyplot as plt
 
 from mlpy.auxiliary.io import load_from_file
 from mlpy.mdp.stateaction import MDPState
-from mlpy.mdp.continuous import CbTData, CbVData, CASML
+from mlpy.mdp.continuous import CbTData, CASML
 
 
 def plot_sampled(obs, sampled):
@@ -218,20 +218,6 @@ def main(args):
             "is_index": False,
         }
     }
-    case_v_template = {
-        "state": {
-            "type": "float",
-            "value": "data.state",
-            "is_index": True,
-            "retrieval_method": args.retrieval_method,
-            "retrieval_method_params": args.retrieval_method_params
-        },
-        "value": {
-            "type": "float",
-            "value": 0.0,
-            "is_index": False,
-        }
-    }
     model = CASML(CbTData(case_t_template, rho=args.rho, tau=args.tau, sigma=args.sigma),
                   ncomponents=args.ncomponents)
 
@@ -263,8 +249,8 @@ def main(args):
             break
 
         if cntr < 10:
-            action_error[i] = evaluate_action(actions, obs[0:i + 1], sampled, plot=False)[0]
-            delta_error[i] = evaluate_delta(obs[0:i + 1], sampled, plot=False)
+            action_error[i] = evaluate_action(actions, obs[0:i + 1], sampled, plot=True)[0]
+            delta_error[i] = evaluate_delta(obs[0:i + 1], sampled, plot=True)
 
     print "Error to true action:\n{0}".format({k: e for k, e in enumerate(action_error)})
     print "Error to average trajectory:\n{0}".format({k: e for k, e in enumerate(delta_error)})
