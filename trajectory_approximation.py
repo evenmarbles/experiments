@@ -1,3 +1,4 @@
+import os
 import sys
 import argparse
 import numpy as np
@@ -5,6 +6,7 @@ from matplotlib import pyplot as plt
 from mlpy.auxiliary.io import load_from_file, save_to_file
 from mlpy.mdp.stateaction import MDPState
 from mlpy.mdp.continuous import CbTData, CASML
+from mlpy.tools.misc import Timer
 
 
 def calc_stats(obs):
@@ -76,7 +78,7 @@ def plot_pos_error(obs, sampled, fig=None, ax=None):
 
 
 def evaluate_pos_error(obs, sampled):
-    n, d = obs.shape
+    n = obs.shape[0]
 
     error = np.zeros(n)
     for i in xrange(n):
@@ -84,6 +86,41 @@ def evaluate_pos_error(obs, sampled):
 
     avg_error = np.sum(error) / float(n)
     return avg_error, error
+
+
+def evaluate_action(actions, obs, sampled):
+    n = obs.shape[0]
+
+    obs_error = np.zeros(n - 1)
+    sampled_error = np.zeros(n - 1)
+
+    for i, a in enumerate(actions.T):
+        obs_delta = obs[i + 1] - obs[i]
+        obs_error[i] = np.linalg.norm(obs_delta - a)
+
+        sampled_delta = sampled[:, i + 1] - sampled[:, i]
+        sampled_error[i] = np.linalg.norm(sampled_delta - a)
+
+    avg_obs_error = np.sum(obs_error) / float(n - 1)
+    avg_sampled_error = np.sum(sampled_error) / float(n - 1)
+
+    error = abs(avg_obs_error - avg_sampled_error)
+
+    return error, avg_obs_error, avg_sampled_error
+
+
+def evaluate_delta(obs, sampled):
+    n = obs.shape[0]
+
+    error = np.zeros(n - 1)
+    for i in xrange(n - 1):
+        obs_delta = obs[i + 1] - obs[i]
+        sampled_delta = sampled[:, i + 1] - sampled[:, i]
+        error[i] = np.linalg.norm(obs_delta - sampled_delta)
+
+    avg_error = np.sum(error) / float(n - 1)
+
+    return avg_error
 
 
 def visualize_obs(obs):
@@ -133,11 +170,14 @@ the sampled trajectory (# trajectories: {0})'.format(nobs))
     fig.show()
 
 
-def plot_sampled(obs, sampled):
-    fig = plt.figure()
-    plt.rcParams['legend.fontsize'] = 10
-    ax = fig.add_subplot(1, 1, 1, projection='3d')
+def plot_sampled(obs, sampled, fig=None, ax=None):
+    if fig is None or not plt.fignum_exists(fig.number):
+        fig = plt.figure()
+        plt.rcParams['legend.fontsize'] = 10
+        ax = fig.add_subplot(1, 1, 1, projection='3d')
+        fig.show()
 
+    ax.cla()
     markers = ['o', 'v', '<', '>', '8', 's', 'p', '*', 'x', 'D']
     colors = ['b', 'g', 'r', 'c', 'm', 'k']
 
@@ -160,14 +200,18 @@ def plot_sampled(obs, sampled):
     ax.set_ylabel('Y position')
     ax.set_zlabel('Z position')
     ax.set_title('Failed: Observed and sampled trajectories')
-    fig.show()
+
+    fig.canvas.draw()
+
+    return fig, ax
 
 
 def main(args):
     if args.collect_data:
         try:
             data = load_from_file(args.infile)
-            obs = data["state"]
+            train = data["train"]
+            test = data["test"]
         except IOError:
             sys.exit(sys.exc_info()[1])
         except KeyError, e:
@@ -202,74 +246,168 @@ def main(args):
             }
         }
 
-        train = obs[50:]
-        nobs = train.shape[0]
-        d, n = train[0].shape
+        ntrials = train.shape[0]
+        nobs = train[0].shape[0]
+        d, n = train[0][0].shape
 
-        sampled = np.zeros((args.reps, nobs, d, n))
-        failed = np.zeros((args.reps, nobs), dtype=np.int)
+        sampled = np.zeros((nobs, d, n))
+        failed = np.zeros(nobs, dtype=np.int)
 
-        for i in xrange(args.reps):
+        for i in xrange(0, ntrials):
             model = CASML(CbTData(case_t_template, rho=args.rho, tau=args.tau, sigma=args.sigma,
                                   plot_reuse=False, plot_reuse_params='original_origin'),
                           ncomponents=args.ncomponents)
 
-            for j, states in enumerate(train):
-                # Train CASML's case base and hmm with states and actions
-                model.fit(states, actions)
+            with Timer() as tm:
+                for j, states in enumerate(train[i]):
+                    # Train CASML's case base and hmm with states and actions
+                    model.fit(states, actions)
 
-                # Test model
-                iter_ = 0
-                while failed[i, j] < 10:
-                    try:
-                        sampled[i, j, :, 0] = model.sample()
+                    # Test model
+                    iter_ = 0
+                    while failed[j] < 10:
+                        try:
+                            sampled[j, :, 0] = model.sample()
 
-                        for iter_, a in enumerate(actions.T):
-                            # sample next state resulting from executing action `a` in state `state`
-                            next_state = model.sample(MDPState(sampled[i, j, :, iter_]), a)
-                            if next_state is None:
-                                raise TypeError
-                            sampled[i, j, :, iter_ + 1] = next_state
-                    except:
-                        # plot_sampled(obs[:j], sampled[i, j, :, :iter_])
+                            for iter_, a in enumerate(actions.T):
+                                # sample next state resulting from executing action `a` in state `state`
+                                next_state = model.sample(MDPState(sampled[j, :, iter_]), a)
+                                if next_state is None:
+                                    raise TypeError
+                                sampled[j, :, iter_ + 1] = next_state
+                        except:
+                            # plot_sampled(obs[:j], sampled[i, j, :, :iter_])
 
-                        sampled[i, j, :].fill(0)
-                        failed[i, j] += 1
+                            sampled[j, :].fill(0)
+                            failed[j] += 1
 
-                        print "{0}:{1}:{2} Failed to infer next state distribution at step {3}.".format(i, j,
-                                                                                                        failed[i, j],
+                            print "{0}:{1} Failed to infer next state distribution at step {2}.".format(j,
+                                                                                                        failed[j],
                                                                                                         iter_)
-                        continue
-                    break
+                            continue
+                        break
 
-        obs_avg, minmax, hist, edges = calc_stats(obs[:50])
+            print('Request took %.03f sec.' % tm.time)
+
+            filename, extension = os.path.splitext(args.outfile)
+            save_to_file(filename + str(i) + extension, {
+                "model": model,
+                "sampled": sampled,
+                "failed": failed,
+                "time": tm.time,
+            })
+
+            sampled.fill(0)
+            failed.fill(0)
+
+        obs_avg, minmax, hist, edges = calc_stats(test)
         # x_hist, y_hist, z_hist, x_edges, y_edges, z_edges = calc_histogram(obs[:50])
 
-        save_to_file(args.outfile, {
-            "sampled": sampled,
-            "failed": failed,
+        path, filename = os.path.split(args.outfile)
+        filename = path + '/validation.pkl'
+        save_to_file(filename, {
             "obs_avg": obs_avg,
             "minmax": minmax,
             "hist": hist,
-            "edges": edges
+            "edges": edges,
         })
 
-    # pos_error = -np.inf * np.ones(nobs)
-    # action_error = -np.inf * np.ones(nobs)
-    # delta_error = -np.inf * np.ones(nobs)
-    #
-    # fig = None
-    # ax = None
+        return
 
-    #         if cntr < 10:
-    #             pos_error[j], pos_errors = evaluate_pos_error(obs_avg, sampled)
-    #             print pos_errors
-    #             fig, ax = plot_pos_error(obs_avg, sampled, fig, ax)
-    #             # action_error[j] = evaluate_action(actions, obs[0:j + 1], sampled, plot=True)[0]
-    #             # delta_error[j] = evaluate_delta(obs[0:j + 1], sampled, plot=True)
-    #
-    # print "Error to true action:\n{0}".format({k: e for k, e in enumerate(action_error)})
-    # print "Error to average trajectory:\n{0}".format({k: e for k, e in enumerate(delta_error)})
+    try:
+        data = load_from_file(args.policy)
+        actions = data['act'][args.policy_num]
+    except IOError:
+        sys.exit(sys.exc_info()[1])
+    except KeyError, e:
+        sys.exit("Key not found: {0}".format(e))
+
+    try:
+        path, filename = os.path.split(args.infile)
+        filename = path + '/validation.pkl'
+        data = load_from_file(filename)
+        obs_avg = data["obs_avg"]
+        minmax = data["minmax"]
+        hist = data["hist"]
+
+        nobs = 50
+        pos_error = np.zeros(nobs)
+        action_error = np.zeros(nobs)
+        delta_error = np.zeros(nobs)
+
+        failed = np.zeros(nobs, dtype=np.int)
+        minmax_error = np.zeros(nobs)
+        # minmax_error = None
+        sampled = None
+        hist = None
+        ncases = 0
+
+        fig = None
+        ax = None
+
+        n = 0
+
+        filename, extension = os.path.splitext(args.infile)
+        for i in xrange(50):
+            data = load_from_file(filename + str(i) + extension)
+            failed += data["failed"]
+            ncases += (data["model"]._cb_t._counter - 1)
+
+            if sampled is None:
+                d, n = data["sampled"][0].shape
+                sampled = np.zeros((d, n))
+                hist = np.zeros((n, d), dtype=np.object)
+
+            for j in xrange(nobs):
+                pos_error[j] += evaluate_pos_error(obs_avg, data["sampled"][j])[0]
+                action_error[j] += evaluate_action(actions, obs_avg, data["sampled"][j])[0]
+                delta_error[j] += evaluate_delta(obs_avg, data["sampled"][j])
+
+                minmax_ = 0
+                for k in xrange(n):
+                    [x, y, z] = data["sampled"][j, :, k]
+                    err = np.zeros(3)
+                    if not minmax[k][0][0] < x < minmax[k][0][1]:
+                        err[0] = abs(minmax[k][0][0] - x) if x < minmax[k][0][0] else abs(minmax[k][0][1] - x)
+                    if not minmax[k][1][0] < y < minmax[k][1][1]:
+                        err[1] = abs(minmax[k][1][0] - y) if y < minmax[k][1][0] else abs(minmax[k][1][1] - y)
+                    if not minmax[k][2][0] < z < minmax[k][2][1]:
+                        err[2] = abs(minmax[k][2][0] - z) if z < minmax[k][2][0] else abs(minmax[k][2][1] - z)
+                    err = np.sqrt(np.sum(np.square(err)))
+                    minmax_ += err
+                minmax_error[j] += minmax_ / float(nobs)
+
+                # fig, ax = plot_sampled([obs_avg.T], data["sampled"][j], fig, ax)
+
+            # hist[i, 0], edges[i, 0] = np.histogram(t[0])
+            # hist[i, 1], edges[i, 1] = np.histogram(t[1])
+            # hist[i, 2], edges[i, 2] = np.histogram(t[2])
+
+            sampled += data["sampled"][-1]
+
+        sampled /= nobs
+        # plot_sampled([obs_avg.T], sampled)
+
+    except IOError:
+        sys.exit(sys.exc_info()[1])
+    except KeyError, e:
+        sys.exit("Key not found: {0}".format(e))
+
+    failed /= float(nobs)
+    pos_error /= float(nobs)
+    action_error /= float(nobs)
+    delta_error /= float(nobs)
+    minmax_error /= float(nobs)
+    ncases /= nobs
+
+    save_to_file(args.outfile, {
+        "failed": failed,
+        "pos_error": pos_error,
+        "action_error": action_error,
+        "delta_error": delta_error,
+        "ncases": ncases
+    })
+
     pass
 
 
@@ -277,7 +415,6 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser(description="Experiment: Learn continuous action and state model for motion.")
     ap.add_argument("--collect_data", action="store_true",
                     help="When set, data is being collected and saved to file.")
-    ap.add_argument("--reps", type=int, default=2, required=False, help="The number of repetitions.")
     ap.add_argument("--rho", type=float, default=0.97, required=False, help="The maximum error rho.")
     ap.add_argument("--tau", type=float, default=0.005, required=False, help="The maximum error tau.")
     ap.add_argument("--sigma", type=float, default=0.001, required=False, help="The maximum error sigma.")
